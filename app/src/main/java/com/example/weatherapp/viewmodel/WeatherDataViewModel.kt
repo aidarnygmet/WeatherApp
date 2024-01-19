@@ -50,7 +50,7 @@ suspend fun nametoCoordinatesCall(apiService: GeocodingService, q:String): Respo
 class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClient): ViewModel() {
     private var lat:String? = null
     private var lon:String? = null
-    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+    private var fusedLocationProviderClient: FusedLocationProviderClient
     private val _myData : MutableStateFlow<MutableMap<String, WeatherData>?> = MutableStateFlow<MutableMap<String, WeatherData>?>(null)
     val myData : StateFlow<MutableMap<String, WeatherData>?>
         get() = _myData
@@ -83,8 +83,8 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
                 val geocodingService: GeocodingService = GeocodingAPIClient.getInstance().create(
                     GeocodingService::class.java)
                 val georesponse = nametoCoordinatesCall(geocodingService,location)
-                var lat = georesponse.body()?.asJsonArray?.get(0)?.asJsonObject?.getAsJsonPrimitive("lat").toString()
-                var lon = georesponse.body()?.asJsonArray?.get(0)?.asJsonObject?.getAsJsonPrimitive("lon").toString()
+                val lat = georesponse.body()?.asJsonArray?.get(0)?.asJsonObject?.getAsJsonPrimitive("lat").toString()
+                val lon = georesponse.body()?.asJsonArray?.get(0)?.asJsonObject?.getAsJsonPrimitive("lon").toString()
                 setLocation(lat, lon)
                 fetchData()
                 addDataStatus = true
@@ -146,6 +146,7 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
     private fun getWeatherDataFromJson(response: JsonObject?): WeatherData? {
         if(response is JsonObject){
             val body = response.getAsJsonObject("current")
+            val timezone = response.getAsJsonPrimitive("timezone").toString().removeSurrounding("\"")
             val weather= WeatherData("null","null","null","null","null","null","null","null", "null",
                 MutableList(0){ hourlyData("0", "0", "null") },
                 MutableList(0){ dailyData("null","null","null","null","null","null","null","null","null","null","null","null", "null", "null") }
@@ -153,7 +154,7 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
             val instantSunrise = Instant.ofEpochSecond(body["sunrise"].toString().toLong())
             val instantSunset = Instant.ofEpochSecond(body["sunset"].toString().toLong())
             val instantTime = Instant.ofEpochSecond(body["dt"].toString().toLong())
-            val formatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault())
+            val formatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of(timezone))
 
             weather.temperature = (body["temp"].toString().toFloat()-273.15).roundToInt().toString()
             weather.sunrise = formatter.format(instantSunrise)
@@ -166,8 +167,8 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
             weather.wind_deg = body["wind_deg"].toString()
             weather.descr = body.getAsJsonArray("weather").get(0).asJsonObject["id"].toString().removeSurrounding("\"")
             weather.time = formatter.format(instantTime)
-            weather.hourlyData = getHourlyData(response.getAsJsonArray("hourly"))
-            weather.dailyData = getDailyData(response.getAsJsonArray("daily"))
+            weather.hourlyData = getHourlyData(response.getAsJsonArray("hourly"), timezone)
+            weather.dailyData = getDailyData(response.getAsJsonArray("daily"), timezone)
             return weather
         } else {
             return null
@@ -175,15 +176,15 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
 
     }
 
-    private fun getDailyData(obj: JsonArray?): MutableList<dailyData> {
+    private fun getDailyData(obj: JsonArray?, timezone: String): MutableList<dailyData> {
         val dailyData = MutableList(0){ dailyData("null","null","null","null","null","null","null","null","null","null","null","null", "null", "null") }
         if (obj != null) {
             for (o in obj){
                 val instantDay = Instant.ofEpochSecond(o.asJsonObject["dt"].toString().toLong())
                 val instantSunrise = Instant.ofEpochSecond(o.asJsonObject["sunrise"].toString().toLong())
                 val instantSunset = Instant.ofEpochSecond(o.asJsonObject["sunset"].toString().toLong())
-                val formatterDay = DateTimeFormatter.ofPattern("dd/MM").withZone(ZoneId.systemDefault())
-                val formatterHour = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault())
+                val formatterDay = DateTimeFormatter.ofPattern("dd/MM").withZone(ZoneId.of(timezone))
+                val formatterHour = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of(timezone))
 
                 val dailyDataObject = dailyData(
                     formatterDay.format(instantDay),
@@ -207,12 +208,12 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
         return dailyData
     }
 
-    private fun getHourlyData(obj: JsonArray?): MutableList<hourlyData> {
+    private fun getHourlyData(obj: JsonArray?, timezone: String): MutableList<hourlyData> {
         val hourlyData= MutableList(0){ hourlyData("0", "0", "null") }
         if (obj != null) {
             for (o in obj){
                 val instant = Instant.ofEpochSecond(o.asJsonObject["dt"].toString().toLong())
-                val formatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault())
+                val formatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of(timezone))
                 val hourlyDataObject = hourlyData((o.asJsonObject["temp"].toString().toFloat()-273.15).roundToInt().toString(), formatter.format(instant), o.asJsonObject.getAsJsonArray("weather").get(0).asJsonObject["id"].toString())
                 hourlyData.add(hourlyDataObject)
                 }

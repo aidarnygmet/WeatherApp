@@ -1,6 +1,7 @@
 package com.example.weatherapp.composables.scrollablePart
 
 import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,14 +17,6 @@ import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
@@ -31,9 +24,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.weatherapp.R
 import com.example.weatherapp.composables.dailyTemperature.DailyTemperatureBox
 import com.example.weatherapp.composables.hourlyTemperature.HourlyTemperatureBox
 import com.example.weatherapp.data.dailyData
@@ -48,7 +43,7 @@ fun ScrollablePart(hourlyData: MutableList<hourlyData>, dailyData: MutableList<d
     ){
 
         item{
-            HourlyTemperatureBox(hourlyData)
+            HourlyTemperatureBox(hourlyData, sunrise, sunset)
             DailyTemperatureBox(dailyData)
         }
         item{
@@ -59,19 +54,19 @@ fun ScrollablePart(hourlyData: MutableList<hourlyData>, dailyData: MutableList<d
             ) {
                 Column{
                     SmallBox(
-                        icon = Icons.Default.Call,
+                        icon = painterResource(id = R.drawable.sunrise),
                         description = "Sunrise",
                         value = sunrise
                     )
                     Spacer(modifier = Modifier.height(18.dp))
                     SmallBox(
-                        icon = Icons.Default.Add,
+                        icon = painterResource(id = R.drawable.humidity),
                         description = "Humidity",
                         value = "$humidity%"
                     )
                     Spacer(modifier = Modifier.height(18.dp))
                     SmallBox(
-                        icon = Icons.Default.AccountBox,
+                        icon = painterResource(id = R.drawable.sunrise),
                         description = "Wind",
                         value = "$wind m/s"
                     )
@@ -79,19 +74,19 @@ fun ScrollablePart(hourlyData: MutableList<hourlyData>, dailyData: MutableList<d
                 Spacer(modifier = Modifier.width(18.dp))
                 Column{
                     SmallBox(
-                        icon = Icons.Default.Build,
+                        icon = painterResource(id = R.drawable.sunset),
                         description = "Sunset",
                         value = sunset
                     )
                     Spacer(modifier = Modifier.height(18.dp))
                     SmallBox(
-                        icon = Icons.Default.Favorite,
+                        icon = painterResource(id = R.drawable.pressure),
                         description = "Pressure",
                         value = pressure
                     )
                     Spacer(modifier = Modifier.height(18.dp))
                     SmallBox(
-                        icon = Icons.Default.Create,
+                        icon = painterResource(id = R.drawable.sun),
                         description = "UVI",
                         value = uvi
                     )
@@ -102,7 +97,7 @@ fun ScrollablePart(hourlyData: MutableList<hourlyData>, dailyData: MutableList<d
 }
 
 @Composable
-fun SmallBox(icon: ImageVector, description: String, value: String)
+fun SmallBox(icon: Painter, description: String, value: String)
 {
     Log.d("check", "${MaterialTheme.colorScheme.primary.toArgb()}")
     Box(
@@ -119,11 +114,11 @@ fun SmallBox(icon: ImageVector, description: String, value: String)
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(48.dp)
+
+            Image(
+                painter = icon,
+                contentDescription = null, // Provide a content description for accessibility
+                modifier = Modifier.size(48.dp) // Set the size as needed
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(

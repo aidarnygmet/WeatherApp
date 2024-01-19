@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +38,8 @@ import com.example.weatherapp.composables.locationSubMenu.LocationMenu
 import com.example.weatherapp.composables.scrollablePart.ScrollablePart
 import com.example.weatherapp.composables.weatherBox.WeatherBox
 import com.example.weatherapp.viewmodel.WeatherDataViewModel
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun WeatherScreen(viewModel: WeatherDataViewModel, location: String, navController: NavController)
@@ -89,17 +90,18 @@ fun WeatherScreen(viewModel: WeatherDataViewModel, location: String, navControll
                 .fillMaxSize()
             ){
                     Column{
-                        val weatherData = weatherDataMap[location]
-                        WeatherBox(weatherData?.temperature, weatherData?.feelsLike, weatherData?.time, Icons.Default.Check)
-                        if (weatherData != null) {
-                            ScrollablePart(
-                                weatherData.hourlyData,
-                                weatherData.dailyData,
-                                weatherData.sunrise, weatherData.sunset,
-                                weatherData.pressure, weatherData.wind, weatherData.uvi,
-                                weatherData.humidity
-                            )
-                        }
+                        val weatherData = weatherDataMap[location]!!
+                        WeatherBox(
+                            weatherData.temperature, weatherData.feelsLike, weatherData.time,
+                            weatherData.descr, dayOrNight(weatherData.time, weatherData.sunrise, weatherData.sunset)
+                        )
+                        ScrollablePart(
+                            weatherData.hourlyData,
+                            weatherData.dailyData,
+                            weatherData.sunrise, weatherData.sunset,
+                            weatherData.pressure, weatherData.wind, weatherData.uvi,
+                            weatherData.humidity
+                        )
                     }
                 this@Column.AnimatedVisibility(
                     visible = isMenuOpen,
@@ -119,4 +121,12 @@ fun WeatherScreen(viewModel: WeatherDataViewModel, location: String, navControll
         }
 
     }
+}
+fun dayOrNight(time1: String, time2: String, time3: String): Boolean {
+    val formatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    val localTime1 = LocalTime.parse(time1, formatter)
+    val localTime2 = LocalTime.parse(time2, formatter)
+    val localTime3 = LocalTime.parse(time3, formatter)
+    return localTime1.isAfter(localTime2) && localTime1.isBefore(localTime3)
 }

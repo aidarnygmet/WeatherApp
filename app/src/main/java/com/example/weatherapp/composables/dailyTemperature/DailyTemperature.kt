@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,9 +21,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
@@ -33,8 +31,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.weatherapp.R
 import com.example.weatherapp.data.dailyData
 
 @Composable
@@ -155,9 +155,9 @@ fun DailyTemperature(data: dailyData, index: Int, expandedIndices: List<Int>, on
                             .clip(MaterialTheme.shapes.medium)
                     ) {
                         Spacer(modifier = Modifier.weight(1f))
-                        MiniBox(icon = Icons.Default.Call, description = "Sunrise", value = data.sunrise)
+                        MiniBox(icon = painterResource(id = R.drawable.sunrise), description = "Sunrise", value = data.sunrise)
                         Spacer(modifier = Modifier.weight(1f))
-                        MiniBox(icon = Icons.Default.Call, description = "Sunset", value = data.sunset)
+                        MiniBox(icon = painterResource(id = R.drawable.sunset), description = "Sunset", value = data.sunset)
                         Spacer(modifier = Modifier.weight(1f))
 
                     }
@@ -168,9 +168,9 @@ fun DailyTemperature(data: dailyData, index: Int, expandedIndices: List<Int>, on
                             .clip(MaterialTheme.shapes.medium)
                     ) {
                         Spacer(modifier = Modifier.weight(1f))
-                        MiniBox(icon = Icons.Default.Call, description = "Humidity", value = "${data.humidity}%")
+                        MiniBox(icon = painterResource(id = R.drawable.humidity), description = "Humidity", value = "${data.humidity}%")
                         Spacer(modifier = Modifier.weight(1f))
-                        MiniBox(icon = Icons.Default.Call, description = "Wind", value = "${data.wind}m/s")
+                        MiniBox(icon = painterResource(id = R.drawable.pressure), description = "Wind", value = "${data.wind}m/s")
                         Spacer(modifier = Modifier.weight(1f))
                     }
                     Spacer(modifier = Modifier.weight(1f))
@@ -181,7 +181,7 @@ fun DailyTemperature(data: dailyData, index: Int, expandedIndices: List<Int>, on
     }
 }
 @Composable
-fun MiniBox(icon: ImageVector, description: String, value: String)
+fun MiniBox(icon: Painter, description: String, value: String)
 {
     Box(
         modifier = Modifier
@@ -198,10 +198,9 @@ fun MiniBox(icon: ImageVector, description: String, value: String)
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                imageVector = icon,
+            Image(
+                painter = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSecondary,
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
