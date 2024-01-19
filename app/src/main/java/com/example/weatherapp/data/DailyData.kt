@@ -12,7 +12,9 @@ class dailyData {
     var pressure: String
     var humidity: String
     var wind: String
+    var wind_deg: String
     var uvi: String
+    var descr: String
     constructor( day: String,
                  sunrise: String,
                  sunset: String,
@@ -24,7 +26,9 @@ class dailyData {
                  pressure: String,
                  humidity: String,
                  wind: String,
-                 uvi: String,){
+                 uvi: String,
+        descr:String,
+        wind_deg:String){
         this.day =day
         this.sunrise=sunrise
         this.sunset=sunset
@@ -37,5 +41,7 @@ class dailyData {
         this.humidity=humidity
         this.wind=wind
         this.uvi=uvi
+        this.descr=descr
+        this.wind_deg=wind_deg
     }
 }

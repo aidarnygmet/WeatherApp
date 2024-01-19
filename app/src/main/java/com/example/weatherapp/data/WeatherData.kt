@@ -7,11 +7,13 @@ class WeatherData {
     var temperature: String
     var feelsLike: String
     var wind: String
+    var wind_deg: String
     var uvi: String
     var pressure: String
     var time: String
     var hourlyData: MutableList<hourlyData>
     var dailyData: MutableList<dailyData>
+    var descr: String
     constructor(
                 sunset: String,
                 sunrise: String,
@@ -23,7 +25,9 @@ class WeatherData {
                 pressure: String,
                 time: String,
                 hourlyData: MutableList<hourlyData>,
-                dailyData: MutableList<dailyData>) {
+                dailyData: MutableList<dailyData>,
+                wind_deg:String,
+        descr:String) {
         this.wind = wind
         this.sunset = sunset
         this.uvi = uvi
@@ -35,5 +39,7 @@ class WeatherData {
         this.hourlyData = hourlyData
         this.time = time
         this.dailyData = dailyData
+        this.wind_deg = wind_deg
+        this.descr = descr
     }
 }

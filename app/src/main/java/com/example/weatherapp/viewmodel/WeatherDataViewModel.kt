@@ -128,7 +128,7 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
                     _myData.value!![locationName] = weatherData
                     Log.d(
                         "check",
-                        "myData: " + _myData.value?.get(locationName)?.temperature.toString()
+                        "myData: " + _myData.value?.get(locationName)?.descr.toString()
                     )
                     continuation.resume(Unit)
                 } catch (e: Exception) {
@@ -147,9 +147,9 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
         if(response is JsonObject){
             val body = response.getAsJsonObject("current")
             val weather= WeatherData("null","null","null","null","null","null","null","null", "null",
-                MutableList(0){ hourlyData("0", "0") },
-                MutableList(0){ dailyData("null","null","null","null","null","null","null","null","null","null","null","null") }
-            )
+                MutableList(0){ hourlyData("0", "0", "null") },
+                MutableList(0){ dailyData("null","null","null","null","null","null","null","null","null","null","null","null", "null", "null") }
+            ,"null","null")
             val instantSunrise = Instant.ofEpochSecond(body["sunrise"].toString().toLong())
             val instantSunset = Instant.ofEpochSecond(body["sunset"].toString().toLong())
             val instantTime = Instant.ofEpochSecond(body["dt"].toString().toLong())
@@ -163,6 +163,8 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
             weather.humidity = body["humidity"].toString()
             weather.uvi = body["uvi"].toString()
             weather.wind = body["wind_speed"].toString()
+            weather.wind_deg = body["wind_deg"].toString()
+            weather.descr = body.getAsJsonArray("weather").get(0).asJsonObject["id"].toString().removeSurrounding("\"")
             weather.time = formatter.format(instantTime)
             weather.hourlyData = getHourlyData(response.getAsJsonArray("hourly"))
             weather.dailyData = getDailyData(response.getAsJsonArray("daily"))
@@ -174,7 +176,7 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
     }
 
     private fun getDailyData(obj: JsonArray?): MutableList<dailyData> {
-        val dailyData = MutableList(0){ dailyData("null","null","null","null","null","null","null","null","null","null","null","null") }
+        val dailyData = MutableList(0){ dailyData("null","null","null","null","null","null","null","null","null","null","null","null", "null", "null") }
         if (obj != null) {
             for (o in obj){
                 val instantDay = Instant.ofEpochSecond(o.asJsonObject["dt"].toString().toLong())
@@ -195,7 +197,9 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
                     o.asJsonObject["pressure"].toString(),
                     o.asJsonObject["humidity"].toString(),
                     o.asJsonObject["wind_speed"].toString(),
-                    o.asJsonObject["uvi"].toString()
+                    o.asJsonObject["uvi"].toString(),
+                    o.asJsonObject.getAsJsonArray("weather").get(0).asJsonObject["id"].toString(),
+                    o.asJsonObject["wind_deg"].toString()
                 )
                 dailyData.add(dailyDataObject)
             }
@@ -204,12 +208,12 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
     }
 
     private fun getHourlyData(obj: JsonArray?): MutableList<hourlyData> {
-        val hourlyData= MutableList(0){ hourlyData("0", "0") }
+        val hourlyData= MutableList(0){ hourlyData("0", "0", "null") }
         if (obj != null) {
             for (o in obj){
                 val instant = Instant.ofEpochSecond(o.asJsonObject["dt"].toString().toLong())
                 val formatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault())
-                val hourlyDataObject = hourlyData((o.asJsonObject["temp"].toString().toFloat()-273.15).roundToInt().toString(), formatter.format(instant))
+                val hourlyDataObject = hourlyData((o.asJsonObject["temp"].toString().toFloat()-273.15).roundToInt().toString(), formatter.format(instant), o.asJsonObject.getAsJsonArray("weather").get(0).asJsonObject["id"].toString())
                 hourlyData.add(hourlyDataObject)
                 }
 
