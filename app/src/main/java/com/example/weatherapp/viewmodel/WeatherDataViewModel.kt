@@ -37,13 +37,13 @@ suspend fun fetchDataFromWeatherApi(apiService: OpenWeatherMapService, lat:Strin
 suspend fun coordinatesToNameCall(apiService: GeocodingService, lat:String, lon:String): Response<JsonElement> {
             return withContext(Dispatchers.IO) {
             val apiKey = "48dd284900f5f0d8e2116acda4cfbdb0"
-            apiService.coordinatesToName(lat, lon,"1", apiKey).execute()
+            apiService.coordinatesToName(lat, lon,"5", apiKey).execute()
         }
     }
 suspend fun nametoCoordinatesCall(apiService: GeocodingService, q:String): Response<JsonElement> {
     return withContext(Dispatchers.IO) {
         val apiKey = "48dd284900f5f0d8e2116acda4cfbdb0"
-        apiService.nameToCoordinates(q,"1", apiKey).execute()
+        apiService.nameToCoordinates(q,"5", apiKey).execute()
     }
 }
 
@@ -54,11 +54,15 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
     private val _myData : MutableStateFlow<MutableMap<String, WeatherData>?> = MutableStateFlow<MutableMap<String, WeatherData>?>(null)
     val myData : StateFlow<MutableMap<String, WeatherData>?>
         get() = _myData
+    private val _searchData : MutableStateFlow<MutableMap<String, WeatherData>?> = MutableStateFlow<MutableMap<String, WeatherData>?>(null)
+    val searchData : StateFlow<MutableMap<String, WeatherData>?>
+        get() = _searchData
     private val _locationState = MutableStateFlow<Location?>(null)
     val locationState: StateFlow<Location?> = _locationState
 
     init {
         this.fusedLocationProviderClient = fusedLocationProvideClient
+        Log.d("check", "init viewModel")
         fetchLocation()
     }
 
@@ -66,36 +70,56 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
         try {
             fusedLocationProviderClient.lastLocation
                 .addOnSuccessListener { location ->
+                    Log.d("check", "Location: "+location.toString())
                     _locationState.value = location
                 }
                 .addOnFailureListener { e ->
-                    // Handle errors
+                    Log.d("check", "Failed to get location"+e.message.toString())
                 }
         } catch (e: SecurityException) {
-            // Handle permission errors
+            Log.d("check", "Security Exception"+e.message.toString())
         }
     }
     suspend fun addData(location: String): Boolean{
+        deleteSearchData()
         var addDataStatus = false
         suspendCancellableCoroutine<Unit> { continuation ->
         viewModelScope.launch{
-            try{
+            try {
                 val geocodingService: GeocodingService = GeocodingAPIClient.getInstance().create(
-                    GeocodingService::class.java)
-                val georesponse = nametoCoordinatesCall(geocodingService,location)
-                val lat = georesponse.body()?.asJsonArray?.get(0)?.asJsonObject?.getAsJsonPrimitive("lat").toString()
-                val lon = georesponse.body()?.asJsonArray?.get(0)?.asJsonObject?.getAsJsonPrimitive("lon").toString()
-                setLocation(lat, lon)
-                fetchData()
+                    GeocodingService::class.java
+                )
+                nametoCoordinatesCall(geocodingService, location).body()?.asJsonArray?.forEach {
+                    fetchSearchData(it.asJsonObject["lat"].toString(), it.asJsonObject["lon"].toString())
+                }
                 addDataStatus = true
                 continuation.resume(Unit)
-            }catch (e: Exception) {
+            } catch (e: Exception) {
                 Log.d("check", e.message.toString())
                 continuation.resume(Unit)
             }
         }
         }
         return addDataStatus
+    }
+    fun deleteSearchData(){
+        _searchData.value = mutableMapOf()
+    }
+    suspend fun updateMap(newEntry: Map.Entry<String, WeatherData>): Boolean{
+        var resp = false
+        suspendCancellableCoroutine<Unit> { continuation ->
+            viewModelScope.launch {
+                try{
+                    _myData.value?.set(newEntry.key, newEntry.value)
+                    resp = true
+                }
+                catch (e: Exception){
+                    Log.d("check", e.message.toString())
+                }
+                continuation.resume(Unit)
+            }
+        }
+        return resp
     }
     fun setLocation(lat: String, lon: String){
         this.lat = lat
@@ -104,7 +128,6 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
     suspend fun fetchData(): Boolean {
         val lat = this.lat
         val lon = this.lon
-        Log.d("check", "inside fetchData $lat $lon")
         if(lat != null && lon != null){
             suspendCancellableCoroutine<Unit> { continuation ->
             viewModelScope.launch {
@@ -119,8 +142,9 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
                         GeocodingAPIClient.getInstance().create(GeocodingService::class.java)
                     val georesponse = coordinatesToNameCall(geocodingService, lat, lon)
                     val locationName =
-                        georesponse.body()?.asJsonArray?.get(0)?.asJsonObject?.getAsJsonPrimitive("name")
-                            .toString().removeSurrounding("\"")
+                        (georesponse.body()?.asJsonArray?.get(0)?.asJsonObject?.getAsJsonPrimitive("name")
+                            .toString().removeSurrounding("\"")+"!"+georesponse.body()?.asJsonArray?.get(0)?.asJsonObject?.getAsJsonPrimitive("state").toString().removeSurrounding("\"")
+                    +"!"+georesponse.body()?.asJsonArray?.get(0)?.asJsonObject?.getAsJsonPrimitive("country").toString().removeSurrounding("\""))
                     if(_myData.value == null){
                         _myData.value = mutableMapOf()
                     }
@@ -143,12 +167,47 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
         Log.d("check", "map size: "+_myData.value?.size.toString())
         return _myData.value?.size != 0
     }
+    private suspend fun fetchSearchData(lat: String, lon: String):Boolean{
+        var res = false
+        suspendCancellableCoroutine<Unit> { continuation ->
+            viewModelScope.launch {
+                try {
+                    val openWeatherMapService: OpenWeatherMapService =
+                        WeatherAPIClient.getInstance().create(
+                            OpenWeatherMapService::class.java
+                        )
+                    val response = fetchDataFromWeatherApi(openWeatherMapService, lat, lon)
+
+                    val geocodingService: GeocodingService =
+                        GeocodingAPIClient.getInstance().create(GeocodingService::class.java)
+                    val georesponse = coordinatesToNameCall(geocodingService, lat, lon)
+                    val locationName =
+                        (georesponse.body()?.asJsonArray?.get(0)?.asJsonObject?.getAsJsonPrimitive("name")
+                            .toString().removeSurrounding("\"")+"!"+georesponse.body()?.asJsonArray?.get(0)?.asJsonObject?.getAsJsonPrimitive("state").toString().removeSurrounding("\"")
+                                +"!"+georesponse.body()?.asJsonArray?.get(0)?.asJsonObject?.getAsJsonPrimitive("country").toString().removeSurrounding("\""))
+                    if(_searchData.value == null){
+                        _searchData.value = mutableMapOf()
+                    }
+                    val weatherData = getWeatherDataFromJson(response.body()?.asJsonObject)!!
+                    _searchData.value!![locationName] = weatherData
+                    res = true
+                    continuation.resume(Unit)
+                } catch (e: Exception) {
+                    Log.d("check", e.message.toString())
+                    continuation.resume(Unit)
+                }
+            }
+        }
+        return res
+    }
+
+
     private fun getWeatherDataFromJson(response: JsonObject?): WeatherData? {
         if(response is JsonObject){
             val body = response.getAsJsonObject("current")
             val timezone = response.getAsJsonPrimitive("timezone").toString().removeSurrounding("\"")
             val weather= WeatherData("null","null","null","null","null","null","null","null", "null",
-                MutableList(0){ hourlyData("0", "0", "null") },
+                MutableList(0){ hourlyData("0", "0", "null","null", "null", "null") },
                 MutableList(0){ dailyData("null","null","null","null","null","null","null","null","null","null","null","null", "null", "null") }
             ,"null","null")
             val instantSunrise = Instant.ofEpochSecond(body["sunrise"].toString().toLong())
@@ -190,7 +249,7 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
                     formatterDay.format(instantDay),
                     formatterHour.format(instantSunrise),
                     formatterHour.format(instantSunset),
-                    o.asJsonObject["summary"].toString(),
+                    o.asJsonObject["summary"].toString().removeSurrounding("\""),
                     (o.asJsonObject.getAsJsonObject("temp").getAsJsonPrimitive("day").asDouble-273.15).roundToInt().toString(),
                     (o.asJsonObject.getAsJsonObject("temp").getAsJsonPrimitive("night").asDouble-273.15).roundToInt().toString(),
                     (o.asJsonObject.getAsJsonObject("feels_like").getAsJsonPrimitive("day").asDouble-273.15).roundToInt().toString(),
@@ -209,12 +268,17 @@ class WeatherDataViewModel(fusedLocationProvideClient: FusedLocationProviderClie
     }
 
     private fun getHourlyData(obj: JsonArray?, timezone: String): MutableList<hourlyData> {
-        val hourlyData= MutableList(0){ hourlyData("0", "0", "null") }
+        val hourlyData= MutableList(0){ hourlyData("0", "0", "null", "null", "null", "null") }
         if (obj != null) {
             for (o in obj){
                 val instant = Instant.ofEpochSecond(o.asJsonObject["dt"].toString().toLong())
                 val formatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of(timezone))
-                val hourlyDataObject = hourlyData((o.asJsonObject["temp"].toString().toFloat()-273.15).roundToInt().toString(), formatter.format(instant), o.asJsonObject.getAsJsonArray("weather").get(0).asJsonObject["id"].toString())
+                val hourlyDataObject = hourlyData((o.asJsonObject["temp"].toString().toFloat()-273.15).roundToInt().toString(),
+                    formatter.format(instant),
+                    o.asJsonObject.getAsJsonArray("weather").get(0).asJsonObject["id"].toString(),
+                    o.asJsonObject["wind_speed"].toString(),
+                    o.asJsonObject["wind_deg"].toString(),
+                    o.asJsonObject["humidity"].toString())
                 hourlyData.add(hourlyDataObject)
                 }
 

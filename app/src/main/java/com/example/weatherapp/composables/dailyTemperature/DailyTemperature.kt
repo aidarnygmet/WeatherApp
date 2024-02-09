@@ -3,12 +3,9 @@ package com.example.weatherapp.composables.dailyTemperature
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -46,7 +42,8 @@ fun DailyTemperatureBox(data: List<dailyData>){
             .fillMaxSize()
             .padding(16.dp)
             .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(5.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha=0.1f), MaterialTheme.shapes.medium)
             .padding(16.dp),
         contentAlignment = Alignment.Center,
     ){
@@ -79,12 +76,14 @@ fun DailyTemperature(data: dailyData, index: Int, expandedIndices: List<Int>, on
         targetValue = if (expandedIndices.contains(index)) 450.dp else 80.dp,
         animationSpec = tween(durationMillis = 300), label = "expansionHeight"
     )
+    val color = if(expandedIndices.contains(index))MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer
     Box(modifier = Modifier
         .height(expandedHeight)
         .fillMaxWidth()
         .padding(8.dp)
         .clip(MaterialTheme.shapes.medium)
-        .background(color = MaterialTheme.colorScheme.secondaryContainer)
+        .background(color = color)
+        .border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha=0.1f), MaterialTheme.shapes.medium)
         .clickable(onClick = onClick)
         //.zIndex(if (expandedIndices.contains(index)) 1f else 0f)
         //.animateContentSize()
@@ -93,60 +92,35 @@ fun DailyTemperature(data: dailyData, index: Int, expandedIndices: List<Int>, on
 
     ){
         Column {
-            AnimatedVisibility(
-                visible = !expandedIndices.contains(index),
-                enter = fadeIn(),
-                exit = fadeOut()
-            ){
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.medium)
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text(text = data.day, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.secondary)
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text(text = "${data.tempDay}°C", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.secondary)
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text(text = "${data.tempNight}°C", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.secondary)
-                    Spacer(modifier = Modifier.weight(1f))
-                }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.medium)
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Spacer(modifier = Modifier.weight(1f))
+                Text(text = data.day, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.secondary)
+                Spacer(modifier = Modifier.weight(1f))
+                Text(text = "${data.tempDay}°C", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.secondary)
+                Spacer(modifier = Modifier.weight(1f))
+                Text(text = "${data.tempNight}°C", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.secondary)
+                Spacer(modifier = Modifier.weight(1f))
             }
 
 
             AnimatedVisibility(
-                visible = expandedIndices.contains(index),
-                enter = slideInVertically(),
-                exit = slideOutVertically()
+                visible = expandedIndices.contains(index)
             ) {
                 Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.medium)
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(text = data.day, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.secondary)
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(text = "${data.tempDay}°C", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.secondary)
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(text = "${data.tempNight}°C", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.secondary)
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
                     Box(modifier = Modifier
                         .padding(horizontal = 24.dp)
                         .clip(MaterialTheme.shapes.medium)
-                        .background(MaterialTheme.colorScheme.secondary)
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
                         .padding(8.dp)
                         ){
-                        Text(text = data.summary, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSecondary)
+                        Text(text = data.summary, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.tertiary)
                         }
                     Spacer(modifier = Modifier.weight(1f))
                     Row (
@@ -188,7 +162,8 @@ fun MiniBox(icon: Painter, description: String, value: String)
             .height(130.dp)
             .width(130.dp)
             .clip(MaterialTheme.shapes.medium)
-            .background(color = MaterialTheme.colorScheme.secondary)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha=0.1f), MaterialTheme.shapes.medium)
 
     ) {
         Column(
@@ -201,18 +176,18 @@ fun MiniBox(icon: Painter, description: String, value: String)
             Image(
                 painter = icon,
                 contentDescription = null,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(48.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = description,
-                color = MaterialTheme.colorScheme.onSecondary,
+                color = MaterialTheme.colorScheme.tertiary,
                 style = MaterialTheme.typography.bodySmall,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
-                color = MaterialTheme.colorScheme.onSecondary,
+                color = MaterialTheme.colorScheme.tertiary,
                 style = MaterialTheme.typography.bodyLarge
             )
         }

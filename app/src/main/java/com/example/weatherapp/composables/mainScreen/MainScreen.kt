@@ -31,6 +31,7 @@ fun MainScreen(navController: NavController, viewModel: WeatherDataViewModel) {
 
     } else {
         Text("Retrieving location...")
+        Log.d("check",locationName.toString()+ loc?.latitude.toString()+ loc?.longitude.toString())
     }
     if (locationName!=null) {
         LaunchedEffect(Unit ){
